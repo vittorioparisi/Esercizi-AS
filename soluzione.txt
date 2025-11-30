@@ -1,0 +1,25 @@
+source /opt/ros/humble/setup.bash
+//workspace creation
+mkdir -p ~/UninaCorse/src 
+cd ~/UninaCorse/src
+mv ~/EX1 ~/UninaCorse/src
+cd ~/UninaCorse/src/EX1
+colcon build
+. install/setup.bash
+//Topics in bag
+ros2 bag info ~/UninaCorse/src/EX1/rosbag2_2024_11_22-00_32_31 | grep -E 'Topic: ' | wc -l
+//Hz
+ros2 bag play --loop ~/UninaCorse/src/EX1/rosbag2_2024_11_22-00_32_31 
+//in another terminal
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 topic list
+ros2 topic hz /zed2i/zed_node/left_gray/image_rect_gray
+//in another terminal
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 topic hz /system_info
+//in another terminal
+source /opt/ros/humble/setup.bash
+source install /setup.bash
+ros2 topic echo /system_info
