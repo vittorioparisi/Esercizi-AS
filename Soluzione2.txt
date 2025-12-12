@@ -1,0 +1,94 @@
+source /opt/ros/humble/setup.bash
+mkdir -p Esercizio2_ws/src
+cd Esercizio2_ws/src
+ls --> ottengo fault_detection  rosbag2_2024_11_27-15_00_23  sysmonitor_interfaces
+colcon build --> fallisce 
+
+(Starting >>> sysmonitor_interfaces
+Finished <<< sysmonitor_interfaces [3.65s]                    
+Starting >>> fault_detection
+--- stderr: fault_detection                         
+CMake Error at /opt/ros/humble/share/ament_cmake_target_dependencies/cmake/ament_target_dependencies.cmake:77 (message):
+  ament_target_dependencies() the passed package name 'sysmonitor_interfaces'
+  was not found before
+Call Stack (most recent call first):
+  CMakeLists.txt:21 (ament_target_dependencies)
+
+
+---
+Failed   <<< fault_detection [0.90s, exited with code 1]
+
+Summary: 1 package finished [5.00s]
+  1 package failed: fault_detection
+  1 package had stderr output: fault_detection) , risolvo aggiungendo find_package(sysmonitor_interfaces REQUIRED) nel CMAKE (nome trovato da libreria nel codice cpp)
+colcon build fallisce ancora (Starting >>> sysmonitor_interfaces
+Finished <<< sysmonitor_interfaces [0.42s]                    
+Starting >>> fault_detection
+--- stderr: fault_detection                             
+/home/vittorio/Esercizio2_ws/src/fault_detection/src/main.cpp:7:28: error: expected ‘;’ before ‘class’
+    7 | using std::placeholders::_1
+      |                            ^
+      |                            ;
+    8 | 
+    9 | class MinimalSubscriber : public rclcpp::Node
+      | ~~~~~                       
+/home/vittorio/Esercizio2_ws/src/fault_detection/src/main.cpp:12:23: error: expected ‘;’ at end of member declaration
+   12 |     MinimalSubscriber()
+      |                       ^
+      |                        ;
+/home/vittorio/Esercizio2_ws/src/fault_detection/src/main.cpp:13:11: error: expected unqualified-id before string constant
+   13 |      Node("minimal_subscriber")
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/vittorio/Esercizio2_ws/src/fault_detection/src/main.cpp:13:11: error: expected ‘)’ before string constant
+   13 |      Node("minimal_subscriber")
+      |          ~^~~~~~~~~~~~~~~~~~~~
+      |           )
+gmake[2]: *** [CMakeFiles/challenge2.dir/build.make:76: CMakeFiles/challenge2.dir/src/main.cpp.o] Errore 1
+gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/challenge2.dir/all] Errore 2
+gmake: *** [Makefile:146: all] Errore 2
+---
+Failed   <<< fault_detection [2.28s, exited with code 2]
+
+Summary: 1 package finished [2.99s]
+  1 package failed: fault_detection
+  1 package had stderr output: fault_detection)
+
+
+risolvo aggiungendo ; linea 7 main e : linea 12 main
+colcon build ha successo
+source ./install/setup.bash 
+ros2 run  fault_detection challenge2 --> 
+
+non stampa nulla, ma da un'altra finestra di terminale (in cui ho fatto source ./install/setup.bash) osservo con ros2 node list che /minimal_subscriber sta andando. In particolare, con ros2 node info /minimal/subscriber trovo che: (Subscribers:
+    /Orin_telemetry: sysmonitor_interfaces/msg/Sysmon
+    /parameter_events: rcl_interfaces/msg/ParameterEvent
+  Publishers:
+    /parameter_events: rcl_interfaces/msg/ParameterEvent
+    /rosout: rcl_interfaces/msg/Log
+  Service Servers:
+    /minimal_subscriber/describe_parameters: rcl_interfaces/srv/DescribeParameters
+    /minimal_subscriber/get_parameter_types: rcl_interfaces/srv/GetParameterTypes
+    /minimal_subscriber/get_parameters: rcl_interfaces/srv/GetParameters
+    /minimal_subscriber/list_parameters: rcl_interfaces/srv/ListParameters
+    /minimal_subscriber/set_parameters: rcl_interfaces/srv/SetParameters
+    /minimal_subscriber/set_parameters_atomically: rcl_interfaces/srv/SetParametersAtomically
+  Service Clients:
+
+  Action Servers:
+
+  Action Clients:)
+
+devo caricare i dati con ros2 bag
+creo, per comodità una cartella bag in cui metto i dati che ho:
+mkdir bag
+cd ~/Esercizio2_ws/src
+mv ~/Esercizio2_ws/src/rosbag2_2024_11_27-15_00_23 ~/Esercizio2_ws/bag
+cd ..
+cd ~/Esercizio2_ws/bag
+ros2 bag play rosbag2_2024_11_27-15_00_23_0/ 
+il nodo viene chiuso: (terminate called after throwing an instance of 'std::invalid_argument'
+  what():  FAULT DETECTION, ERROR! BOX BOX BOX
+[ros2run]: Aborted)
+
+il problema sta nella chiamata a magicfunction. Difatti, ponendola come commento e ricompilando (esce un warn che si toglie ponendo come commento anche & msg nella chiamata) la bag viene letta senza problemi. In particolare, std::invalid_argument, compare per magiclib.o, come si nota scrivendo a terminale nm magiclib.o
+ 
