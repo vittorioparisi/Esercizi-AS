@@ -93,4 +93,28 @@ il nodo viene chiuso: (terminate called after throwing an instance of 'std::inva
 [ros2run]: Aborted)
 
 il problema sta nella chiamata a magicfunction. Difatti, ponendola come commento e ricompilando (esce un warn che si toglie ponendo come commento anche & msg nella chiamata) la bag viene letta senza problemi. In particolare, std::invalid_argument, compare per magiclib.o, come si nota scrivendo a terminale nm magiclib.o
+
+Ciò vuol dire che uno dei valori caricati dalla bag non rispetta dei limiti della magicfunction. Procedo così:
+Modifico lo script del main cpp: in particolare, modifico la riga in cui è presente RCLCCP_INFO così:
+
+RCLCPP_INFO(this->get_logger(), "I heard Orin Telemetry: %f cpu_usage , %f cpu_temp, %f ram_usage, %f gpu_usage, %f gpu_temp", msg.cpu_usage,msg.cpu_temp,msg.ram_usage,msg.gpu_usage,msg.gpu_temp);
+
+così facendo leggo a terminale i valori che interessano la magicfunction. A questo punto, caricando la bag ottengo la seguente uscita: 
+
+[INFO] [1765555460.736369615] [minimal_subscriber]: I heard Orin Telemetry: 95.000000 cpu_usage , 26.000000 cpu_temp, 16.000000 ram_usage, 3.000000 gpu_usage, 60.000000 gpu_temp
+[INFO] [1765555460.878980724] [minimal_subscriber]: I heard Orin Telemetry: 82.000000 cpu_usage , 55.000000 cpu_temp, 29.000000 ram_usage, 48.000000 gpu_usage, 95.000000 gpu_temp
+[INFO] [1765555461.129085755] [minimal_subscriber]: I heard Orin Telemetry: 5.000000 cpu_usage , 46.000000 cpu_temp, 6.000000 ram_usage, 67.000000 gpu_usage, 63.000000 gpu_temp
+[INFO] [1765555461.378817511] [minimal_subscriber]: I heard Orin Telemetry: 90.000000 cpu_usage , 8.000000 cpu_temp, 10.000000 ram_usage, 68.000000 gpu_usage, 61.000000 gpu_temp
+[INFO] [1765555461.628851652] [minimal_subscriber]: I heard Orin Telemetry: 93.000000 cpu_usage , 55.000000 cpu_temp, 25.000000 ram_usage, 51.000000 gpu_usage, 44.000000 gpu_temp
+[INFO] [1765555461.881668759] [minimal_subscriber]: I heard Orin Telemetry: 51.000000 cpu_usage , 91.000000 cpu_temp, 20.000000 ram_usage, 35.000000 gpu_usage, 47.000000 gpu_temp
+terminate called after throwing an instance of 'std::invalid_argument'
+  what():  FAULT DETECTION, ERROR! BOX BOX BOX
+[ros2run]: Aborted
+
+osservo che il valore dell'ultima uscita di RCLCPP_INFO, ossia l'input che non piace a magicfunction, sembra essere cpu_temp, in quanto è quello che più degli altri si discosta da quelli precedenti. In effetti, procedendo per tentativi, sembra che la magicfunction causì la chiusura del programma se tali valori sono maggiori o uguali a 90. Risolvo cambiando i parametri della magicfunction:
+
+magic_function(msg.cpu_usage,std::min(msg.cpu_temp, 89.0),msg.ram_usage,msg.gpu_usage,msg.gpu_temp);
+
+così facendo, sto dando in ingresso al più il valore 89 e non ho problemi
+
  
