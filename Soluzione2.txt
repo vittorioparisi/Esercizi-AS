@@ -117,4 +117,14 @@ magic_function(msg.cpu_usage,std::min(msg.cpu_temp, 89.0),msg.ram_usage,msg.gpu_
 
 così facendo, sto dando in ingresso al più il valore 89 e non ho problemi
 
+Altrimenti, posso evitare l'abort usando try catch della libreria <stdexcept>:
+
+try{
+ 	     magic_function(msg.cpu_usage,msg.cpu_temp,msg.ram_usage,msg.gpu_usage,msg.gpu_temp);
+
+    } catch (const std::invalid_argument& e) {
+
+       }
+
  
+
